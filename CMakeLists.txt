@@ -1,18 +1,18 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(GlitchSynth VERSION 0.1.0)
+project(Antartida VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/JUCE JUCE)
 
-juce_add_plugin(GlitchSynth
+juce_add_plugin(Antartida
     COMPANY_NAME "YourStudio"
     PLUGIN_MANUFACTURER_CODE Yrst
-    PLUGIN_CODE Gsy1
+    PLUGIN_CODE Ant1
     FORMATS VST3 Standalone
-    PRODUCT_NAME "GlitchSynth"
+    PRODUCT_NAME "Antartida"
     IS_SYNTH TRUE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
@@ -23,7 +23,7 @@ juce_add_plugin(GlitchSynth
     VST3_COPY_DIR "D:/VST3Plugins"
 )
 
-target_sources(GlitchSynth
+target_sources(Antartida
     PRIVATE
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
@@ -31,14 +31,14 @@ target_sources(GlitchSynth
         Source/DSP/GlitchEngine.cpp
 )
 
-target_compile_definitions(GlitchSynth
+target_compile_definitions(Antartida
     PUBLIC
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
 )
 
-target_link_libraries(GlitchSynth
+target_link_libraries(Antartida
     PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp

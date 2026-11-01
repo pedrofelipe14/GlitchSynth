@@ -1,29 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-
-namespace ParamIDs
-{
-    static const juce::String oscWaveform        = "oscWaveform";
-    static const juce::String ampAttack           = "ampAttack";
-    static const juce::String ampDecay             = "ampDecay";
-    static const juce::String ampSustain           = "ampSustain";
-    static const juce::String ampRelease           = "ampRelease";
-    static const juce::String filterCutoff         = "filterCutoff";
-    static const juce::String filterResonance      = "filterResonance";
-    static const juce::String filterEnvAmount      = "filterEnvAmount";
-    static const juce::String masterGainDb         = "masterGainDb";
-
-    static const juce::String glitchMix            = "glitchMix";
-    static const juce::String glitchGrainSizeMs    = "glitchGrainSizeMs";
-    static const juce::String glitchPitchRatio     = "glitchPitchRatio";
-    static const juce::String glitchHoldAmount     = "glitchHoldAmount";
-    static const juce::String glitchDegrade        = "glitchDegrade";
-    static const juce::String glitchChaos          = "glitchChaos";
-    static const juce::String glitchReverseAmount  = "glitchReverseAmount";
-    static const juce::String glitchToneTilt       = "glitchToneTilt";
-    static const juce::String selfGlitchEnabled    = "selfGlitchEnabled";
-    static const juce::String sidechainLevelDb     = "sidechainLevelDb";
-}
+#include "ParamIDs.h"
 
 static constexpr int numVoices = 8;
 
@@ -48,64 +25,64 @@ juce::AudioProcessorValueTreeState::ParameterLayout GlitchSynthAudioProcessor::c
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
     params.push_back(std::make_unique<juce::AudioParameterChoice>(
-        ParamIDs::oscWaveform, "Oscillator Waveform",
-        juce::StringArray { "Sine", "Saw", "Square", "Triangle" }, 1));
+        ParamIDs::oscWaveform, "Forma de Onda",
+        juce::StringArray { "Seno", "Sierra", "Cuadrada", "Triangular" }, 1));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::ampAttack, "Amp Attack",
+        ParamIDs::ampAttack, "Ataque",
         juce::NormalisableRange<float>(0.001f, 5.0f, 0.001f, 0.3f), 0.01f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::ampDecay, "Amp Decay",
+        ParamIDs::ampDecay, "Decaimiento",
         juce::NormalisableRange<float>(0.001f, 5.0f, 0.001f, 0.3f), 0.1f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::ampSustain, "Amp Sustain",
+        ParamIDs::ampSustain, "Sustain",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.8f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::ampRelease, "Amp Release",
+        ParamIDs::ampRelease, "Release",
         juce::NormalisableRange<float>(0.001f, 5.0f, 0.001f, 0.3f), 0.2f));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::filterCutoff, "Filter Cutoff",
+        ParamIDs::filterCutoff, "Corte del Filtro",
         juce::NormalisableRange<float>(20.0f, 20000.0f, 1.0f, 0.3f), 4000.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::filterResonance, "Filter Resonance",
+        ParamIDs::filterResonance, "Resonancia",
         juce::NormalisableRange<float>(0.1f, 10.0f, 0.01f, 0.4f), 0.7f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::filterEnvAmount, "Filter Env Amount",
+        ParamIDs::filterEnvAmount, "Env. del Filtro",
         juce::NormalisableRange<float>(-48.0f, 48.0f, 0.1f), 24.0f));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::masterGainDb, "Master Gain",
+        ParamIDs::masterGainDb, "Volumen General",
         juce::NormalisableRange<float>(-24.0f, 12.0f, 0.1f), 0.0f));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchMix, "Glitch Mix",
+        ParamIDs::glitchMix, "Mezcla Glitch",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchGrainSizeMs, "Glitch Grain Size",
+        ParamIDs::glitchGrainSizeMs, "Tamano de Grano",
         juce::NormalisableRange<float>(20.0f, 1000.0f, 1.0f, 0.4f), 250.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchPitchRatio, "Glitch Pitch",
+        ParamIDs::glitchPitchRatio, "Tono del Loop",
         juce::NormalisableRange<float>(0.25f, 4.0f, 0.001f, 0.4f), 1.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchHoldAmount, "Glitch Hold (freeze loop)",
+        ParamIDs::glitchHoldAmount, "Congelar Loop",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.3f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchDegrade, "Glitch Degrade",
+        ParamIDs::glitchDegrade, "Degradacion",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.2f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchChaos, "Glitch Chaos",
+        ParamIDs::glitchChaos, "Caos",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.2f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchReverseAmount, "Glitch Reverse Amount",
+        ParamIDs::glitchReverseAmount, "Reversa",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.1f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchToneTilt, "Glitch Tone Tilt",
+        ParamIDs::glitchToneTilt, "Tono (Tilt)",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterBool>(
-        ParamIDs::selfGlitchEnabled, "Self Glitch (apply to synth output)", false));
+        ParamIDs::selfGlitchEnabled, "Auto-Glitch", false));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::sidechainLevelDb, "Sidechain Level",
+        ParamIDs::sidechainLevelDb, "Nivel Sidechain",
         juce::NormalisableRange<float>(-24.0f, 12.0f, 0.1f), 0.0f));
 
     return { params.begin(), params.end() };
@@ -189,6 +166,10 @@ void GlitchSynthAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     updateVoiceParametersFromState();
 
     const int numSamples = buffer.getNumSamples();
+
+    // Merge on-screen keyboard clicks (from the editor) with any incoming MIDI,
+    // so the plugin can be played standalone without an external MIDI controller.
+    keyboardState.processNextMidiBuffer(midiMessages, 0, numSamples, true);
 
     auto mainOut = getBusBuffer(buffer, false, 0);
     mainOut.clear();
