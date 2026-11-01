@@ -20,6 +20,7 @@ juce_add_plugin(GlitchSynth
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
     VST3_CATEGORIES Instrument Synth
     COPY_PLUGIN_AFTER_BUILD TRUE
+    VST3_COPY_DIR "D:/VST3Plugins"
 )
 
 target_sources(GlitchSynth

@@ -5,9 +5,16 @@ A VST3 synthesizer plugin for FL Studio (and any VST3 host), built with [JUCE](h
 ## What it is
 
 GlitchSynth is a subtractive synth (4 waveforms, ADSR, resonant filter with envelope
-modulation) that can also take in an audio sidechain and apply glitch processing to it
-(bitcrush, tempo-rate stutter/repeat, chunk reversal). The same glitch engine can
-optionally be applied to the synth's own output too.
+modulation) paired with a Chase Bliss "Mood"/"Blooper"-style granular degrader that can
+run on an audio sidechain input, the synth's own output, or both. It continuously
+records live audio, freezes grains and loops them, pitch-shifts the loop, and
+progressively degrades it (bit/rate crush + grit) the longer a grain repeats. A single
+"Chaos" knob drives generative randomness on top: tape-style wow/flutter, random reverse
+flips, and random decisions to grab fresh material vs. keep looping what it already has
+— aimed at glitchcore/indietronica textures (think Eartheater, THE HELLP).
+
+Glitch params: Grain Size, Pitch, Hold (freeze-loop tendency), Degrade, Chaos, Reverse
+Amount, and Tone Tilt (dark/lowpassed to bright/highpass-emphasised).
 
 In FL Studio: drop it in the Channel Rack as an instrument, then right-click a mixer
 track and "Sidechain to this track" into GlitchSynth's input to feed it audio to glitch.

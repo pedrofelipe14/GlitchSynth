@@ -14,11 +14,13 @@ namespace ParamIDs
     static const juce::String masterGainDb         = "masterGainDb";
 
     static const juce::String glitchMix            = "glitchMix";
-    static const juce::String glitchBitDepth       = "glitchBitDepth";
-    static const juce::String glitchRateDivider    = "glitchRateDivider";
-    static const juce::String glitchStutterRateHz  = "glitchStutterRateHz";
-    static const juce::String glitchStutterAmount  = "glitchStutterAmount";
+    static const juce::String glitchGrainSizeMs    = "glitchGrainSizeMs";
+    static const juce::String glitchPitchRatio     = "glitchPitchRatio";
+    static const juce::String glitchHoldAmount     = "glitchHoldAmount";
+    static const juce::String glitchDegrade        = "glitchDegrade";
+    static const juce::String glitchChaos          = "glitchChaos";
     static const juce::String glitchReverseAmount  = "glitchReverseAmount";
+    static const juce::String glitchToneTilt       = "glitchToneTilt";
     static const juce::String selfGlitchEnabled    = "selfGlitchEnabled";
     static const juce::String sidechainLevelDb     = "sidechainLevelDb";
 }
@@ -80,20 +82,26 @@ juce::AudioProcessorValueTreeState::ParameterLayout GlitchSynthAudioProcessor::c
         ParamIDs::glitchMix, "Glitch Mix",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchBitDepth, "Glitch Bit Depth",
-        juce::NormalisableRange<float>(1.0f, 16.0f, 0.1f), 16.0f));
+        ParamIDs::glitchGrainSizeMs, "Glitch Grain Size",
+        juce::NormalisableRange<float>(20.0f, 1000.0f, 1.0f, 0.4f), 250.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchRateDivider, "Glitch Rate Divider",
-        juce::NormalisableRange<float>(1.0f, 50.0f, 0.1f, 0.4f), 1.0f));
+        ParamIDs::glitchPitchRatio, "Glitch Pitch",
+        juce::NormalisableRange<float>(0.25f, 4.0f, 0.001f, 0.4f), 1.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchStutterRateHz, "Glitch Stutter Rate",
-        juce::NormalisableRange<float>(1.0f, 32.0f, 0.1f, 0.5f), 8.0f));
+        ParamIDs::glitchHoldAmount, "Glitch Hold (freeze loop)",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.3f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        ParamIDs::glitchStutterAmount, "Glitch Stutter Amount",
-        juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.0f));
+        ParamIDs::glitchDegrade, "Glitch Degrade",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.2f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        ParamIDs::glitchChaos, "Glitch Chaos",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.2f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         ParamIDs::glitchReverseAmount, "Glitch Reverse Amount",
-        juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.0f));
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.1f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        ParamIDs::glitchToneTilt, "Glitch Tone Tilt",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterBool>(
         ParamIDs::selfGlitchEnabled, "Self Glitch (apply to synth output)", false));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
@@ -128,12 +136,14 @@ void GlitchSynthAudioProcessor::updateVoiceParametersFromState()
     }
 
     GlitchEngine::Params glitchParams;
-    glitchParams.mix              = apvts.getRawParameterValue(ParamIDs::glitchMix)->load();
-    glitchParams.bitDepth         = apvts.getRawParameterValue(ParamIDs::glitchBitDepth)->load();
-    glitchParams.sampleRateDivider = apvts.getRawParameterValue(ParamIDs::glitchRateDivider)->load();
-    glitchParams.stutterRateHz    = apvts.getRawParameterValue(ParamIDs::glitchStutterRateHz)->load();
-    glitchParams.stutterAmount    = apvts.getRawParameterValue(ParamIDs::glitchStutterAmount)->load();
-    glitchParams.reverseAmount    = apvts.getRawParameterValue(ParamIDs::glitchReverseAmount)->load();
+    glitchParams.mix           = apvts.getRawParameterValue(ParamIDs::glitchMix)->load();
+    glitchParams.grainSizeMs   = apvts.getRawParameterValue(ParamIDs::glitchGrainSizeMs)->load();
+    glitchParams.pitchRatio    = apvts.getRawParameterValue(ParamIDs::glitchPitchRatio)->load();
+    glitchParams.holdAmount    = apvts.getRawParameterValue(ParamIDs::glitchHoldAmount)->load();
+    glitchParams.degrade       = apvts.getRawParameterValue(ParamIDs::glitchDegrade)->load();
+    glitchParams.chaos         = apvts.getRawParameterValue(ParamIDs::glitchChaos)->load();
+    glitchParams.reverseAmount = apvts.getRawParameterValue(ParamIDs::glitchReverseAmount)->load();
+    glitchParams.toneTilt      = apvts.getRawParameterValue(ParamIDs::glitchToneTilt)->load();
 
     sidechainGlitch.setParams(glitchParams);
     selfGlitch.setParams(glitchParams);
