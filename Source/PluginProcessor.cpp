@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "ParamIDs.h"
+#include "Presets.h"
 
 static constexpr int numVoices = 8;
 
@@ -208,6 +209,37 @@ void GlitchSynthAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
 juce::AudioProcessorEditor* GlitchSynthAudioProcessor::createEditor()
 {
     return new GlitchSynthAudioProcessorEditor(*this);
+}
+
+int GlitchSynthAudioProcessor::getNumPrograms()
+{
+    return (int) getFactoryPresets().size();
+}
+
+const juce::String GlitchSynthAudioProcessor::getProgramName(int index)
+{
+    const auto& presets = getFactoryPresets();
+    if (index >= 0 && index < (int) presets.size())
+        return presets[(size_t) index].name;
+    return {};
+}
+
+void GlitchSynthAudioProcessor::setCurrentProgram(int index)
+{
+    const auto& presets = getFactoryPresets();
+    if (index < 0 || index >= (int) presets.size())
+        return;
+
+    currentProgramIndex = index;
+
+    for (const auto& presetValue : presets[(size_t) index].values)
+    {
+        if (auto* param = apvts.getParameter(presetValue.paramID))
+        {
+            const float normalised = param->getNormalisableRange().convertTo0to1(presetValue.value);
+            param->setValueNotifyingHost(normalised);
+        }
+    }
 }
 
 void GlitchSynthAudioProcessor::getStateInformation(juce::MemoryBlock& destData)

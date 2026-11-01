@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include "PluginProcessor.h"
 
 /** Grid-of-knobs editor, pedal-style: two sections (Sintetizador / Glitch),
@@ -12,6 +14,9 @@ public:
 
     void paint(juce::Graphics&) override;
     void resized() override;
+
+    bool keyPressed(const juce::KeyPress& key) override;
+    bool keyStateChanged(bool isKeyDown) override;
 
 private:
     struct Knob
@@ -31,6 +36,10 @@ private:
 
     GlitchSynthAudioProcessor& processorRef;
 
+    juce::Label titleLabel { {}, "ANTARTIDA" };
+    juce::Label presetLabel { {}, "Preset" };
+    juce::ComboBox presetBox;
+
     juce::Label synthSectionLabel { {}, "SINTETIZADOR" };
     juce::Label glitchSectionLabel { {}, "GLITCH" };
 
@@ -45,9 +54,18 @@ private:
 
     juce::MidiKeyboardComponent keyboard;
 
+    // Computer-keyboard-to-note mapping (like Logic's Musical Typing / Ableton's
+    // computer MIDI keyboard): A S D F G H J K O L P are the white keys, W E T Y
+    // are the black keys above them, Z/X shift the octave down/up.
+    static constexpr const char* computerKeyboardNoteChars = "AWSEDFTGYHUJKOLP";
+    static constexpr int numComputerKeyboardNotes = 16;
+    int computerKeyboardBaseNote = 60;
+    std::array<bool, numComputerKeyboardNotes> computerKeyDown {};
+
     static constexpr int cellWidth = 176;
     static constexpr int cellHeight = 100;
     static constexpr int headerHeight = 26;
+    static constexpr int topBarHeight = 30;
     static constexpr int sectionGap = 14;
     static constexpr int margin = 16;
     static constexpr int keyboardHeight = 90;

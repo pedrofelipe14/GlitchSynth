@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include "ParamIDs.h"
+#include "Presets.h"
 
 GlitchSynthAudioProcessorEditor::GlitchSynthAudioProcessorEditor(GlitchSynthAudioProcessor& p)
     : AudioProcessorEditor(&p),
@@ -8,7 +9,24 @@ GlitchSynthAudioProcessorEditor::GlitchSynthAudioProcessorEditor(GlitchSynthAudi
 {
     keyboard.setLowestVisibleKey(48);
     keyboard.setAvailableRange(0, 127);
+    keyboard.setWantsKeyboardFocus(false); // keep computer-keyboard focus on the editor itself
     addAndMakeVisible(keyboard);
+
+    titleLabel.setFont(juce::Font(juce::FontOptions(20.0f, juce::Font::bold)));
+    addAndMakeVisible(titleLabel);
+
+    presetLabel.setJustificationType(juce::Justification::centredRight);
+    addAndMakeVisible(presetLabel);
+
+    const auto& presets = getFactoryPresets();
+    for (int i = 0; i < (int) presets.size(); ++i)
+        presetBox.addItem(presets[(size_t) i].name, i + 1);
+    presetBox.setSelectedId(processorRef.getCurrentProgram() + 1, juce::dontSendNotification);
+    presetBox.onChange = [this]
+    {
+        processorRef.setCurrentProgram(presetBox.getSelectedId() - 1);
+    };
+    addAndMakeVisible(presetBox);
 
     synthSectionLabel.setJustificationType(juce::Justification::centredLeft);
     synthSectionLabel.setFont(juce::Font(juce::FontOptions(18.0f, juce::Font::bold)));
@@ -56,8 +74,11 @@ GlitchSynthAudioProcessorEditor::GlitchSynthAudioProcessorEditor(GlitchSynthAudi
     addKnob(ParamIDs::glitchToneTilt,     "Tilt",           1, 1, 3);
 
     setSize(5 * cellWidth + 2 * margin,
-            2 * headerHeight + 4 * cellHeight + sectionGap + 2 * margin + keyboardHeight + margin);
+            topBarHeight + 2 * headerHeight + 4 * cellHeight + sectionGap + 2 * margin + keyboardHeight + margin);
     setResizable(true, true);
+
+    setWantsKeyboardFocus(true);
+    grabKeyboardFocus();
 }
 
 GlitchSynthAudioProcessorEditor::~GlitchSynthAudioProcessorEditor() = default;
@@ -117,6 +138,12 @@ void GlitchSynthAudioProcessorEditor::resized()
     keyboard.setBounds(keyboardArea);
     bounds.removeFromBottom(margin / 2);
 
+    auto topBar = bounds.removeFromTop(topBarHeight);
+    titleLabel.setBounds(topBar.removeFromLeft(3 * cellWidth / 2));
+    presetBox.setBounds(topBar.removeFromRight(2 * cellWidth));
+    presetLabel.setBounds(topBar.removeFromRight(cellWidth / 2));
+    bounds.removeFromTop(6);
+
     auto synthHeader = bounds.removeFromTop(headerHeight);
     synthSectionLabel.setBounds(synthHeader);
     waveformLabel.setBounds(synthHeader.withX(synthHeader.getX() + 4 * cellWidth).withWidth(cellWidth / 2));
@@ -134,4 +161,48 @@ void GlitchSynthAudioProcessorEditor::resized()
 
     auto glitchArea = bounds.removeFromTop(2 * cellHeight);
     layoutSection(glitchArea, 1, 2);
+}
+
+bool GlitchSynthAudioProcessorEditor::keyPressed(const juce::KeyPress& key)
+{
+    const auto c = key.getTextCharacter();
+
+    if (c == 'z' || c == 'Z')
+    {
+        computerKeyboardBaseNote = juce::jmax(0, computerKeyboardBaseNote - 12);
+        return true;
+    }
+
+    if (c == 'x' || c == 'X')
+    {
+        computerKeyboardBaseNote = juce::jmin(127 - numComputerKeyboardNotes, computerKeyboardBaseNote + 12);
+        return true;
+    }
+
+    return false;
+}
+
+bool GlitchSynthAudioProcessorEditor::keyStateChanged(bool /*isKeyDown*/)
+{
+    bool handledAny = false;
+
+    for (int i = 0; i < numComputerKeyboardNotes; ++i)
+    {
+        const bool down = juce::KeyPress::isKeyCurrentlyDown((int) computerKeyboardNoteChars[i]);
+
+        if (down != computerKeyDown[(size_t) i])
+        {
+            computerKeyDown[(size_t) i] = down;
+            handledAny = true;
+
+            const int noteNumber = juce::jlimit(0, 127, computerKeyboardBaseNote + i);
+
+            if (down)
+                processorRef.keyboardState.noteOn(1, noteNumber, 1.0f);
+            else
+                processorRef.keyboardState.noteOff(1, noteNumber, 0.0f);
+        }
+    }
+
+    return handledAny;
 }
