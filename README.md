@@ -1,5 +1,7 @@
 # Salir de Casa — sintetizador VST3
 
+[![Build](https://github.com/pedrofelipe14/GlitchSynth/actions/workflows/build.yml/badge.svg)](https://github.com/pedrofelipe14/GlitchSynth/actions/workflows/build.yml)
+
 Plugin de síntesis y efectos glitch para FL Studio (y cualquier host VST3), escrito en **C++17 con JUCE**.
 Es el instrumento con el que se está grabando el primer disco de *salir de casa*.
 
@@ -23,7 +25,11 @@ Es el instrumento con el que se está grabando el primer disco de *salir de casa
 - Filtro *state-variable* TPT (`juce::dsp`), bloqueo de DC, *de-click* al robar voces y limitador suave de salida.
 - Parámetros con `AudioProcessorValueTreeState`: automatizables desde el host y con unidades legibles (Hz, ms, st, dB).
 - `LookAndFeel` propio: perillas, switches y menús dibujados a mano; la UI se escala sin deformarse.
-- Build con **CMake**; genera VST3 y una versión Standalone para probar sin DAW.
+- Build con **CMake**, que genera VST3 y una versión Standalone para probar sin DAW. CI en **GitHub Actions** compila y publica los releases.
+
+## Descargar
+
+El VST3 y la app Standalone para Windows se pueden bajar desde [Releases](https://github.com/pedrofelipe14/GlitchSynth/releases/latest). Copiá `Salir de Casa.vst3` a tu carpeta de plugins VST3 y reescaneá los plugins desde el DAW.
 
 ## Compilar
 
@@ -35,7 +41,9 @@ cmake -B build -G "Visual Studio 17 2022"
 cmake --build build --config Release --target SalirDeCasa_All
 ```
 
-El VST3 se copia a la carpeta definida en `VST3_COPY_DIR` dentro de `CMakeLists.txt` (cambiala por tu carpeta de plugins).
+El VST3 se copia solo a la carpeta de plugins al compilar: cambiala con `-DSDC_VST3_COPY_DIR="C:/ruta/a/tus/plugins"`, o desactivá la copia con `-DSDC_COPY_PLUGIN=OFF`.
+
+Cada push compila el plugin en Windows con **GitHub Actions**, y cada tag `v*` publica un release con el plugin listo para descargar.
 
 ## Uso en FL Studio
 

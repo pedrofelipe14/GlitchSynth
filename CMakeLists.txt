@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SalirDeCasa VERSION 0.1.0)
+project(SalirDeCasa VERSION 0.3.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# CI turns the copy off; locally the plugin lands straight in the DAW's plugin folder.
+option(SDC_COPY_PLUGIN "Copy the VST3 to SDC_VST3_COPY_DIR after building" ON)
+set(SDC_VST3_COPY_DIR "D:/VST3Plugins" CACHE PATH "Folder the VST3 is copied to after building")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/JUCE JUCE)
 
@@ -19,8 +23,8 @@ juce_add_plugin(SalirDeCasa
     IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
     VST3_CATEGORIES Instrument Synth
-    COPY_PLUGIN_AFTER_BUILD TRUE
-    VST3_COPY_DIR "D:/VST3Plugins"
+    COPY_PLUGIN_AFTER_BUILD ${SDC_COPY_PLUGIN}
+    VST3_COPY_DIR "${SDC_VST3_COPY_DIR}"
 )
 
 target_sources(SalirDeCasa
