@@ -1,8 +1,7 @@
 # Salir de Casa — sintetizador VST3
 
 Plugin de síntesis y efectos glitch para FL Studio (y cualquier host VST3), escrito en **C++17 con JUCE**.
-Es el instrumento con el que se está grabando el primer disco de mi banda, *salir de casa*
-([página de la banda](https://pedrofelipe14.github.io/salir-de-casa/)).
+Es el instrumento con el que se está grabando el primer disco de *salir de casa*.
 
 ![Interfaz del plugin](docs/screenshot.png)
 
