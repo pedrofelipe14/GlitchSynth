@@ -1,18 +1,18 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Antartida VERSION 0.1.0)
+project(SalirDeCasa VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/JUCE JUCE)
 
-juce_add_plugin(Antartida
+juce_add_plugin(SalirDeCasa
     COMPANY_NAME "YourStudio"
     PLUGIN_MANUFACTURER_CODE Yrst
     PLUGIN_CODE Ant1
     FORMATS VST3 Standalone
-    PRODUCT_NAME "Antartida"
+    PRODUCT_NAME "Salir de Casa"
     IS_SYNTH TRUE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
@@ -23,23 +23,32 @@ juce_add_plugin(Antartida
     VST3_COPY_DIR "D:/VST3Plugins"
 )
 
-target_sources(Antartida
+target_sources(SalirDeCasa
     PRIVATE
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
+        Source/WaveEditor.cpp
+        Source/SalirLookAndFeel.cpp
         Source/DSP/SynthVoice.cpp
         Source/DSP/GlitchEngine.cpp
+        Source/DSP/WetEngine.cpp
 )
 
-target_compile_definitions(Antartida
+juce_add_binary_data(SalirDeCasaAssets
+    SOURCES
+        Resources/banner.png
+)
+
+target_compile_definitions(SalirDeCasa
     PUBLIC
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
 )
 
-target_link_libraries(Antartida
+target_link_libraries(SalirDeCasa
     PRIVATE
+        SalirDeCasaAssets
         juce::juce_audio_utils
         juce::juce_dsp
     PUBLIC

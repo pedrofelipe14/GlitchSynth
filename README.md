@@ -37,7 +37,9 @@ for quick testing without a DAW.
 
 - `Source/PluginProcessor.*` — parameter layout, audio bus setup, processBlock.
 - `Source/PluginEditor.*` — UI (currently the generic auto-built parameter editor).
-- `Source/DSP/SynthVoice.*` — oscillator + ADSR + filter voice.
+- `Source/DSP/SynthVoice.*` — two-oscillator voice + ADSR + filter.
+- `Source/DSP/CustomWave.h` — point-shaped single-cycle waveform (one per oscillator).
+- `Source/WaveEditor.*` — waveform display with draggable shaping points.
 - `Source/DSP/GlitchEngine.*` — bitcrush / stutter-repeat / reverse processor.
 
 ## Status

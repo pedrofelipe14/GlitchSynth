@@ -3,6 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "DSP/SynthVoice.h"
 #include "DSP/GlitchEngine.h"
+#include "DSP/WetEngine.h"
 
 class GlitchSynthAudioProcessor : public juce::AudioProcessor
 {
@@ -23,7 +24,7 @@ public:
 
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return false; }
-    double getTailLengthSeconds() const override { return 0.0; }
+    double getTailLengthSeconds() const override { return 4.0; }
 
     int getNumPrograms() override;
     int getCurrentProgram() override { return currentProgramIndex; }
@@ -37,13 +38,19 @@ public:
     juce::AudioProcessorValueTreeState apvts;
     juce::MidiKeyboardState keyboardState;
 
+    // One custom-shaped cycle per oscillator, edited from the UI and played by every voice.
+    std::array<CustomWave, GlitchSynthVoice::numOscillators> customWaves;
+
 private:
+    static juce::String customWaveStateKey(int oscIndex);
+
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     void updateVoiceParametersFromState();
 
     juce::Synthesiser synth;
     GlitchEngine sidechainGlitch;
     GlitchEngine selfGlitch;
+    WetEngine wet;
 
     juce::AudioBuffer<float> sidechainWorkBuffer;
 
