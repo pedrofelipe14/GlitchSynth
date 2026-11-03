@@ -26,15 +26,42 @@ GlitchSynthAudioProcessorEditor::GlitchSynthAudioProcessorEditor(GlitchSynthAudi
     presetLabel.setJustificationType(juce::Justification::centredRight);
     addAndMakeVisible(presetLabel);
 
-    const auto& presets = getFactoryPresets();
-    for (int i = 0; i < (int) presets.size(); ++i)
-        presetBox.addItem(presets[(size_t) i].name, i + 1);
-    presetBox.setSelectedId(processorRef.getCurrentProgram() + 1, juce::dontSendNotification);
+    refreshPresetList();
+    presetBox.setWantsKeyboardFocus(false);
     presetBox.onChange = [this]
     {
-        processorRef.setCurrentProgram(presetBox.getSelectedId() - 1);
+        const int id = presetBox.getSelectedId();
+        if (id >= firstUserPresetId)
+        {
+            const int index = id - firstUserPresetId;
+            if (index < userPresetFiles.size())
+                processorRef.loadUserPreset(userPresetFiles[index]);
+        }
+        else if (id > 0)
+        {
+            processorRef.setCurrentProgram(id - 1);
+        }
     };
     addAndMakeVisible(presetBox);
+
+    savePresetButton.setWantsKeyboardFocus(false);
+    savePresetButton.setMouseClickGrabsKeyboardFocus(false); // or clicking it would cancel the name field
+    savePresetButton.onClick = [this]
+    {
+        if (presetNameEditor.isVisible())
+            finishSavingPreset(true);
+        else
+            beginSavingPreset();
+    };
+    addAndMakeVisible(savePresetButton);
+
+    presetNameEditor.setFont(juce::Font(juce::FontOptions(13.0f)));
+    presetNameEditor.setTextToShowWhenEmpty("nombre del preset", Theme::textDim.withAlpha(0.6f));
+    presetNameEditor.setIndents(10, 7);
+    presetNameEditor.onReturnKey = [this] { finishSavingPreset(true); };
+    presetNameEditor.onEscapeKey = [this] { finishSavingPreset(false); };
+    presetNameEditor.onFocusLost = [this] { finishSavingPreset(false); };
+    addChildComponent(presetNameEditor);
 
     const juce::StringArray sectionNames { "SINTETIZADOR", "LFO", "WET", "MICRO-LOOP" };
     for (int s = 0; s < numSections; ++s)
@@ -114,7 +141,7 @@ GlitchSynthAudioProcessorEditor::GlitchSynthAudioProcessorEditor(GlitchSynthAudi
     baseWidth = innerWidth + 2 * margin;
     baseHeight = innerHeight + 2 * margin;
 
-    scaledComponents = { &keyboard, &presetLabel, &presetBox };
+    scaledComponents = { &keyboard, &presetLabel, &presetBox, &savePresetButton, &presetNameEditor };
     for (auto& label : sectionLabels)
         scaledComponents.push_back(&label);
     for (auto& waveEditor : waveEditors)
@@ -276,7 +303,10 @@ void GlitchSynthAudioProcessorEditor::resized()
     bannerArea = topBar.removeFromLeft(bannerWidth);
 
     auto presetRow = topBar.withSizeKeepingCentre(topBar.getWidth(), 30);
+    savePresetButton.setBounds(presetRow.removeFromRight(84));
+    presetRow.removeFromRight(8);
     presetBox.setBounds(presetRow.removeFromRight(240));
+    presetNameEditor.setBounds(presetBox.getBounds());
     presetRow.removeFromRight(10);
     presetLabel.setBounds(presetRow.removeFromRight(70));
     bounds.removeFromTop(sectionGap);
@@ -351,6 +381,57 @@ void GlitchSynthAudioProcessorEditor::resized()
         component->setTransform(scale);
 
     repaint();
+}
+
+void GlitchSynthAudioProcessorEditor::refreshPresetList()
+{
+    presetBox.clear(juce::dontSendNotification);
+
+    const auto& presets = getFactoryPresets();
+    for (int i = 0; i < (int) presets.size(); ++i)
+        presetBox.addItem(presets[(size_t) i].name, i + 1);
+
+    userPresetFiles = GlitchSynthAudioProcessor::getUserPresetFiles();
+    if (!userPresetFiles.isEmpty())
+    {
+        presetBox.addSeparator();
+        presetBox.addSectionHeading("MIS PRESETS");
+        for (int i = 0; i < userPresetFiles.size(); ++i)
+            presetBox.addItem(userPresetFiles[i].getFileNameWithoutExtension(), firstUserPresetId + i);
+    }
+
+    const int userIndex = userPresetFiles.indexOf(processorRef.currentUserPreset);
+    presetBox.setSelectedId(userIndex >= 0 ? firstUserPresetId + userIndex
+                                           : processorRef.getCurrentProgram() + 1,
+                            juce::dontSendNotification);
+}
+
+void GlitchSynthAudioProcessorEditor::beginSavingPreset()
+{
+    // Start from the current user preset's name, so re-saving it is just Enter.
+    presetNameEditor.setText(processorRef.currentUserPreset.getFileNameWithoutExtension(), false);
+    presetNameEditor.selectAll();
+
+    presetBox.setVisible(false);
+    presetNameEditor.setVisible(true);
+    presetNameEditor.grabKeyboardFocus();
+    savePresetButton.setButtonText("OK");
+}
+
+void GlitchSynthAudioProcessorEditor::finishSavingPreset(bool save)
+{
+    if (!presetNameEditor.isVisible())
+        return; // already finished (Enter also loses focus on the way out)
+
+    presetNameEditor.setVisible(false);
+    presetBox.setVisible(true);
+    savePresetButton.setButtonText("Guardar");
+
+    if (save && processorRef.saveUserPreset(presetNameEditor.getText()))
+        refreshPresetList();
+
+    // Back to the editor, so the computer keyboard plays notes again.
+    grabKeyboardFocus();
 }
 
 int GlitchSynthAudioProcessorEditor::numWhiteKeys()

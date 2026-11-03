@@ -41,8 +41,21 @@ public:
     // One custom-shaped cycle per oscillator, edited from the UI and played by every voice.
     std::array<CustomWave, GlitchSynthVoice::numOscillators> customWaves;
 
+    // User presets: one file per preset (the full state, custom waves included) in
+    // Documents/Salir de Casa/Presets, so they can be copied or shared by hand.
+    static juce::File getUserPresetFolder();
+    static juce::Array<juce::File> getUserPresetFiles();
+    bool saveUserPreset(const juce::String& name);
+    bool loadUserPreset(const juce::File& file);
+
+    /** The user preset loaded last, so a reopened editor still shows its name. */
+    juce::File currentUserPreset;
+
 private:
     static juce::String customWaveStateKey(int oscIndex);
+
+    std::unique_ptr<juce::XmlElement> createStateXml();
+    void loadStateXml(const juce::XmlElement& xml);
 
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     void updateVoiceParametersFromState();

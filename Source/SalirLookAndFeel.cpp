@@ -30,6 +30,14 @@ SalirLookAndFeel::SalirLookAndFeel()
     setColour(juce::PopupMenu::highlightedBackgroundColourId, Theme::accentDim);
     setColour(juce::PopupMenu::highlightedTextColourId, Theme::text);
 
+    setColour(juce::TextEditor::backgroundColourId, Theme::background.darker(0.3f));
+    setColour(juce::TextEditor::textColourId, Theme::text);
+    setColour(juce::TextEditor::highlightColourId, Theme::accentDim);
+    setColour(juce::TextEditor::highlightedTextColourId, Theme::text);
+    setColour(juce::TextEditor::outlineColourId, Theme::panelEdge);
+    setColour(juce::TextEditor::focusedOutlineColourId, Theme::accent.withAlpha(0.8f));
+    setColour(juce::CaretComponent::caretColourId, Theme::accent);
+
     setColour(juce::TextButton::textColourOffId, Theme::textDim);
     setColour(juce::TextButton::textColourOnId, Theme::text);
 

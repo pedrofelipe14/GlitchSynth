@@ -369,6 +369,7 @@ void GlitchSynthAudioProcessor::setCurrentProgram(int index)
         return;
 
     currentProgramIndex = index;
+    currentUserPreset = juce::File();
 
     // Start from defaults so anything a preset doesn't mention is reset, not left over.
     for (auto* param : getParameters())
@@ -385,7 +386,7 @@ void GlitchSynthAudioProcessor::setCurrentProgram(int index)
     }
 }
 
-void GlitchSynthAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
+std::unique_ptr<juce::XmlElement> GlitchSynthAudioProcessor::createStateXml()
 {
     auto state = apvts.copyState();
 
@@ -393,21 +394,86 @@ void GlitchSynthAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
     for (int o = 0; o < GlitchSynthVoice::numOscillators; ++o)
         state.setProperty(customWaveStateKey(o), customWaves[(size_t) o].toString(), nullptr);
 
-    std::unique_ptr<juce::XmlElement> xml(state.createXml());
-    copyXmlToBinary(*xml, destData);
+    return state.createXml();
+}
+
+void GlitchSynthAudioProcessor::loadStateXml(const juce::XmlElement& xml)
+{
+    if (!xml.hasTagName(apvts.state.getType()))
+        return;
+
+    for (int o = 0; o < GlitchSynthVoice::numOscillators; ++o)
+        if (xml.hasAttribute(customWaveStateKey(o)))
+            customWaves[(size_t) o].fromString(xml.getStringAttribute(customWaveStateKey(o)));
+
+    apvts.replaceState(juce::ValueTree::fromXml(xml));
+}
+
+void GlitchSynthAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
+{
+    copyXmlToBinary(*createStateXml(), destData);
 }
 
 void GlitchSynthAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
-    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
-    if (xmlState == nullptr || !xmlState->hasTagName(apvts.state.getType()))
-        return;
+    if (auto xml = getXmlFromBinary(data, sizeInBytes))
+        loadStateXml(*xml);
+}
 
-    for (int o = 0; o < GlitchSynthVoice::numOscillators; ++o)
-        if (xmlState->hasAttribute(customWaveStateKey(o)))
-            customWaves[(size_t) o].fromString(xmlState->getStringAttribute(customWaveStateKey(o)));
+namespace
+{
+    const juce::String userPresetExtension = ".sdcpreset";
+}
 
-    apvts.replaceState(juce::ValueTree::fromXml(*xmlState));
+juce::File GlitchSynthAudioProcessor::getUserPresetFolder()
+{
+    return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+        .getChildFile("Salir de Casa")
+        .getChildFile("Presets");
+}
+
+juce::Array<juce::File> GlitchSynthAudioProcessor::getUserPresetFiles()
+{
+    auto files = getUserPresetFolder().findChildFiles(juce::File::findFiles, false, "*" + userPresetExtension);
+
+    struct ByName
+    {
+        static int compareElements(const juce::File& a, const juce::File& b)
+        {
+            return a.getFileNameWithoutExtension().compareNatural(b.getFileNameWithoutExtension());
+        }
+    } byName;
+    files.sort(byName);
+    return files;
+}
+
+bool GlitchSynthAudioProcessor::saveUserPreset(const juce::String& name)
+{
+    const auto fileName = juce::File::createLegalFileName(name.trim());
+    if (fileName.isEmpty())
+        return false;
+
+    const auto folder = getUserPresetFolder();
+    if (!folder.createDirectory())
+        return false;
+
+    const auto file = folder.getChildFile(fileName + userPresetExtension);
+    if (!createStateXml()->writeTo(file))
+        return false;
+
+    currentUserPreset = file;
+    return true;
+}
+
+bool GlitchSynthAudioProcessor::loadUserPreset(const juce::File& file)
+{
+    auto xml = juce::XmlDocument::parse(file);
+    if (xml == nullptr || !xml->hasTagName(apvts.state.getType()))
+        return false;
+
+    loadStateXml(*xml);
+    currentUserPreset = file;
+    return true;
 }
 
 juce::String GlitchSynthAudioProcessor::customWaveStateKey(int oscIndex)

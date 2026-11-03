@@ -66,6 +66,16 @@ private:
     juce::Label presetLabel { {}, "PRESET" };
     juce::ComboBox presetBox;
 
+    // "Guardar" swaps the preset list for a name field; Enter saves, Escape cancels.
+    juce::TextButton savePresetButton { "Guardar" };
+    juce::TextEditor presetNameEditor;
+    juce::Array<juce::File> userPresetFiles; // in the order they appear in presetBox
+    static constexpr int firstUserPresetId = 1000;
+
+    void refreshPresetList();
+    void beginSavingPreset();
+    void finishSavingPreset(bool save);
+
     std::array<juce::Label, numSections> sectionLabels;
     std::array<juce::Rectangle<int>, numSections> sectionPanels;
     std::array<juce::Rectangle<int>, numSections> sectionGrids;
