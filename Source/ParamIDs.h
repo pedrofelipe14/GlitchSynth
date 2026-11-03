@@ -37,6 +37,11 @@ namespace ParamIDs
     static const juce::String masterGainDb           = "masterGainDb";
     static const juce::String pitchBendRange         = "pitchBendRange";
 
+    static const juce::String lfoShape               = "lfoShape";
+    static const juce::String lfoTarget              = "lfoTarget";
+    static const juce::String lfoRate                = "lfoRate";
+    static const juce::String lfoDepth               = "lfoDepth";
+
     static const juce::String wetMode                = "wetMode";
     static const juce::String wetMix                 = "wetMix";
     static const juce::String wetTime                = "wetTime";

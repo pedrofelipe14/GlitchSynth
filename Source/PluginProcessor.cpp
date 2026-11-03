@@ -39,8 +39,9 @@ namespace
             case Unit::seconds:      return v < 1.0f ? juce::String(juce::roundToInt(v * 1000.0f)) + " ms"
                                                      : juce::String(v, 2) + " s";
             case Unit::milliseconds: return juce::String(juce::roundToInt(v)) + " ms";
-            case Unit::hertz:        return v < 1000.0f ? juce::String(juce::roundToInt(v)) + " Hz"
-                                                        : juce::String(v / 1000.0f, 2) + " kHz";
+            case Unit::hertz:        return v < 10.0f   ? juce::String(v, 2) + " Hz"
+                                       : v < 1000.0f ? juce::String(juce::roundToInt(v)) + " Hz"
+                                                     : juce::String(v / 1000.0f, 2) + " kHz";
             case Unit::decibels:     return withSign(v, 1) + " dB";
             case Unit::semitones:    return withSign(v, std::abs(v - std::round(v)) < 0.05f ? 0 : 1) + " st";
             case Unit::cents:        return withSign(v, 1) + " ct";
@@ -129,6 +130,17 @@ juce::AudioProcessorValueTreeState::ParameterLayout GlitchSynthAudioProcessor::c
     // pitch bend), so matching that makes slides land on the right note out of the box.
     params.push_back(makeInt(ParamIDs::pitchBendRange, "Rango Pitch Bend", 1, 24, 12, Unit::semitones));
 
+    // Depth starts at zero, so the LFO is silent until you reach for it.
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(
+        ParamIDs::lfoShape, "LFO Forma",
+        juce::StringArray { "Seno", "Triangular", "Sierra", "Cuadrada", "Azar" }, 0));
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(
+        ParamIDs::lfoTarget, "LFO Destino",
+        juce::StringArray { "Filtro", "Tono", "Volumen" }, 0));
+    params.push_back(makeFloat(ParamIDs::lfoRate, "LFO Velocidad",
+                               { 0.05f, 20.0f, 0.01f, 0.3f }, 4.0f, Unit::hertz));
+    params.push_back(makeFloat(ParamIDs::lfoDepth, "LFO Profundidad", unitRange(), 0.0f, Unit::percent));
+
     params.push_back(makeFloat(ParamIDs::masterGainDb, "Volumen General",
                                { -24.0f, 12.0f, 0.1f }, 0.0f, Unit::decibels));
 
@@ -191,6 +203,12 @@ void GlitchSynthAudioProcessor::updateVoiceParametersFromState()
     const float envAmount  = apvts.getRawParameterValue(ParamIDs::filterEnvAmount)->load();
     const float bendRange  = apvts.getRawParameterValue(ParamIDs::pitchBendRange)->load();
 
+    GlitchSynthVoice::LfoSettings lfo;
+    lfo.shape  = (LfoShape) (int) apvts.getRawParameterValue(ParamIDs::lfoShape)->load();
+    lfo.target = (LfoTarget) (int) apvts.getRawParameterValue(ParamIDs::lfoTarget)->load();
+    lfo.rateHz = apvts.getRawParameterValue(ParamIDs::lfoRate)->load();
+    lfo.depth  = apvts.getRawParameterValue(ParamIDs::lfoDepth)->load();
+
     for (int i = 0; i < synth.getNumVoices(); ++i)
     {
         if (auto* voice = dynamic_cast<GlitchSynthVoice*>(synth.getVoice(i)))
@@ -200,6 +218,7 @@ void GlitchSynthAudioProcessor::updateVoiceParametersFromState()
             voice->setAmpAdsrParams(ampParams);
             voice->setFilterParams(cutoff, resonance, envAmount);
             voice->setPitchBendRange(bendRange);
+            voice->setLfo(lfo);
         }
     }
 

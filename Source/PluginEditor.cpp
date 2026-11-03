@@ -36,7 +36,7 @@ GlitchSynthAudioProcessorEditor::GlitchSynthAudioProcessorEditor(GlitchSynthAudi
     };
     addAndMakeVisible(presetBox);
 
-    const juce::StringArray sectionNames { "SINTETIZADOR", "WET", "MICRO-LOOP" };
+    const juce::StringArray sectionNames { "SINTETIZADOR", "LFO", "WET", "MICRO-LOOP" };
     for (int s = 0; s < numSections; ++s)
     {
         auto& label = sectionLabels[(size_t) s];
@@ -75,8 +75,14 @@ GlitchSynthAudioProcessorEditor::GlitchSynthAudioProcessorEditor(GlitchSynthAudi
     addKnob(ParamIDs::pitchBendRange,       "Rango Bend",     synthSection, envRow, 7);
     addKnob(ParamIDs::masterGainDb,         "Volumen",        synthSection, envRow, 8);
 
+    // LFO
+    addChoice(ParamIDs::lfoShape,           "Forma",          lfoSection, 0, 0);
+    addChoice(ParamIDs::lfoTarget,          "Destino",        lfoSection, 0, 1);
+    addKnob(ParamIDs::lfoRate,              "Velocidad",      lfoSection, 1, 0);
+    addKnob(ParamIDs::lfoDepth,             "Profundidad",    lfoSection, 1, 1);
+
     // Wet
-    addKnob(ParamIDs::wetMix,               "Mezcla",         wetSection, 0, 0);
+    addKnob(ParamIDs::wetMix,              "Mezcla",         wetSection, 0, 0);
     addKnob(ParamIDs::wetTime,              "Tiempo",         wetSection, 0, 1);
     addKnob(ParamIDs::wetModify,            "Modificar",      wetSection, 0, 2);
     addChoice(ParamIDs::wetMode,            "Modo",           wetSection, 1, 0);
@@ -98,7 +104,7 @@ GlitchSynthAudioProcessorEditor::GlitchSynthAudioProcessorEditor(GlitchSynthAudi
     addToggle(ParamIDs::selfGlitchEnabled,  "Auto-Glitch",    loopSection, 1, 4);
     addToggle(ParamIDs::loopKeep,           "Mantener",       loopSection, 1, 5);
 
-    const int lowerWidth = (wetCols + loopCols) * cellWidth + 4 * panelPadding + sectionGap;
+    const int lowerWidth = (lfoCols + wetCols + loopCols) * cellWidth + 6 * panelPadding + 2 * sectionGap;
     const int innerWidth = juce::jmax(lowerWidth, synthCols * cellWidth + 2 * panelPadding);
     const int innerHeight = topBarHeight + sectionGap
                           + (headerHeight + synthRows * cellHeight + 2 * panelPadding) + sectionGap
@@ -278,13 +284,15 @@ void GlitchSynthAudioProcessorEditor::resized()
     sectionPanels[synthSection] = bounds.removeFromTop(headerHeight + synthRows * cellHeight + 2 * panelPadding);
     bounds.removeFromTop(sectionGap);
 
-    // The two effect channels side by side.
+    // LFO and the two effect channels side by side.
     auto lowerArea = bounds.removeFromTop(headerHeight + effectRows * cellHeight + 2 * panelPadding);
+    sectionPanels[lfoSection] = lowerArea.removeFromLeft(lfoCols * cellWidth + 2 * panelPadding);
+    lowerArea.removeFromLeft(sectionGap);
     sectionPanels[wetSection] = lowerArea.removeFromLeft(wetCols * cellWidth + 2 * panelPadding);
     lowerArea.removeFromLeft(sectionGap);
     sectionPanels[loopSection] = lowerArea;
 
-    const std::array<int, numSections> sectionCols { synthCols, wetCols, loopCols };
+    const std::array<int, numSections> sectionCols { synthCols, lfoCols, wetCols, loopCols };
 
     for (int s = 0; s < numSections; ++s)
     {

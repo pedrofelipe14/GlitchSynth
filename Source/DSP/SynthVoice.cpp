@@ -5,6 +5,10 @@ namespace
     // Per-voice output gain, leaves headroom for chords across all voices.
     constexpr float voiceGain = 0.3f;
 
+    // How far the LFO reaches at full depth.
+    constexpr float lfoFilterRangeSemitones = 36.0f; // +-3 octaves of cutoff
+    constexpr float lfoPitchRangeSemitones = 2.0f;   // vibrato up to +-a whole tone
+
     /** PolyBLEP residual: smooths the hard edges of saw/square so they don't alias (sound harsh). */
     float polyBlep(float t, float dt)
     {
@@ -54,6 +58,9 @@ void GlitchSynthVoice::prepare(double sampleRate, int samplesPerBlock)
     // ~10 Hz cutoff: inaudible, but removes any constant offset.
     dcBlockCoeff = 1.0f - (float) (juce::MathConstants<double>::twoPi * 10.0 / sampleRate);
 
+    // ~2 ms: keeps the LFO's hard steps (square, random) from clicking without dulling them.
+    lfoSmoothCoeff = (float) std::exp(-1.0 / (0.002 * sampleRate));
+
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
     spec.maximumBlockSize = (juce::uint32) samplesPerBlock;
@@ -72,6 +79,10 @@ void GlitchSynthVoice::startNote(int midiNoteNumber, float velocity,
 
     for (auto& osc : oscStates)
         osc.phase = 0.0;
+
+    lfoPhase = 0.0;
+    lfoHeldValue = random.nextFloat() * 2.0f - 1.0f;
+    lfoSmoothed = 0.0f;
 
     // If this voice was cut off mid-sound (stolen), fade out what it was playing.
     declickValue = lastOutput;
@@ -143,6 +154,31 @@ float GlitchSynthVoice::renderOscSample(int index)
     return sample;
 }
 
+float GlitchSynthVoice::nextLfoSample()
+{
+    const float p = (float) lfoPhase;
+    float raw = 0.0f;
+
+    switch (lfoSettings.shape)
+    {
+        case LfoShape::sine:     raw = std::sin(p * juce::MathConstants<float>::twoPi); break;
+        case LfoShape::triangle: raw = 1.0f - 4.0f * std::abs(p - 0.5f); break;
+        case LfoShape::saw:      raw = 2.0f * p - 1.0f; break;
+        case LfoShape::square:   raw = p < 0.5f ? 1.0f : -1.0f; break;
+        case LfoShape::random:   raw = lfoHeldValue; break;
+    }
+
+    lfoPhase += lfoSettings.rateHz / currentSampleRate;
+    if (lfoPhase >= 1.0)
+    {
+        lfoPhase -= 1.0;
+        lfoHeldValue = random.nextFloat() * 2.0f - 1.0f;
+    }
+
+    lfoSmoothed = raw + lfoSmoothCoeff * (lfoSmoothed - raw);
+    return lfoSmoothed;
+}
+
 void GlitchSynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
                                         int startSample, int numSamples)
 {
@@ -171,15 +207,24 @@ void GlitchSynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
             break;
         }
 
+        const float lfo = nextLfoSample();
+        const float lfoAmount = lfo * lfoSettings.depth;
+        const float lfoCutoffSemitones = lfoSettings.target == LfoTarget::filter ? lfoAmount * lfoFilterRangeSemitones : 0.0f;
+        const float lfoPitchSemitones = lfoSettings.target == LfoTarget::pitch ? lfoAmount * lfoPitchRangeSemitones : 0.0f;
+        // Tremolo only dips below full level, so turning it up never makes notes louder.
+        const float lfoGain = lfoSettings.target == LfoTarget::volume
+                                ? 1.0f - lfoSettings.depth * 0.5f * (1.0f - lfo)
+                                : 1.0f;
+
         // Same envelope drives amplitude and filter cutoff, so notes "open up" on attack.
         const float envValue = ampAdsr.getNextSample();
         const float modulatedCutoff = juce::jlimit(
             20.0f, 20000.0f,
-            filterCutoffHz * std::pow(2.0f, (filterEnvAmount * envValue) / 12.0f));
+            filterCutoffHz * std::pow(2.0f, (filterEnvAmount * envValue + lfoCutoffSemitones) / 12.0f));
         filter.setCutoffFrequency(modulatedCutoff);
 
         currentBend = targetBend + bendGlideCoeff * (currentBend - targetBend);
-        const double bendRatio = std::exp2((double) currentBend / 12.0);
+        const double bendRatio = std::exp2((double) (currentBend + lfoPitchSemitones) / 12.0);
 
         float osc = 0.0f;
         for (int o = 0; o < numOscillators; ++o)
@@ -197,7 +242,7 @@ void GlitchSynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
 
         const float filtered = filter.processSample(0, dcBlocked);
         declickValue *= declickCoeff;
-        const float out = filtered * level * envValue * voiceGain + declickValue;
+        const float out = filtered * level * envValue * lfoGain * voiceGain + declickValue;
         lastOutput = out;
 
         for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)

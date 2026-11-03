@@ -8,9 +8,8 @@
 #include "WaveEditor.h"
 
 /** Pedal-style editor: a synth section across the top (one row per oscillator,
-    each with a shapeable waveform, then envelope/filter), then the two effect
-    channels side by side (WET on the left, MICRO-LOOP on the right), with the
-    on-screen keyboard at the bottom. */
+    each with a shapeable waveform, then envelope/filter), then LFO, WET and
+    MICRO-LOOP side by side, with the on-screen keyboard at the bottom. */
 class GlitchSynthAudioProcessorEditor : public juce::AudioProcessorEditor,
                                         private juce::Timer
 {
@@ -26,7 +25,7 @@ public:
     void focusLost(FocusChangeType) override;
 
 private:
-    enum Section { synthSection = 0, wetSection, loopSection, numSections };
+    enum Section { synthSection = 0, lfoSection, wetSection, loopSection, numSections };
 
     /** One grid cell: a label over a knob, a drop-down or a switch. */
     struct Control
@@ -105,6 +104,7 @@ private:
     static constexpr int synthCols = 9;
     static constexpr int synthRows = GlitchSynthVoice::numOscillators + 1;
     static constexpr int waveEditorCols = 3; // grid cells each wave editor spans
+    static constexpr int lfoCols = 2;
     static constexpr int wetCols = 3;
     static constexpr int loopCols = 6;
     static constexpr int effectRows = 2;

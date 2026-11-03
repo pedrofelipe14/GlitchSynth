@@ -19,6 +19,8 @@ struct Preset
 
 /** Factory presets. Choice values are raw indices:
       oscWaveform, osc2Waveform  0=Seno 1=Sierra 2=Cuadrada 3=Triangular 4=Propia
+      lfoShape     0=Seno 1=Triangular 2=Sierra 3=Cuadrada 4=Azar
+      lfoTarget    0=Filtro 1=Tono 2=Volumen
       wetMode      0=Reverb 1=Delay 2=Slip
       routeOrder   0=Loop>Wet 1=Wet>Loop
       loopInterval 0=-2oct 1=-1oct 2=-5ta 3=-4ta 4=Unisono 5=+4ta 6=+5ta 7=+1oct 8=+1oct+5ta 9=+2oct
@@ -162,6 +164,18 @@ inline const std::vector<Preset>& getFactoryPresets()
                 { glitchHoldAmount, 0.3f }, { glitchDegrade, 0.2f }, { glitchChaos, 0.25f },
                 { glitchReverseAmount, 0.2f }, { glitchToneTilt, 0.7f },
                 { selfGlitchEnabled, 1.0f },
+            }
+        },
+        {
+            "Respiro",
+            {
+                { oscWaveform, 1 }, { osc2Waveform, 1 }, { osc2Level, 0.8f },
+                { osc2Octave, -1 }, { osc2Fine, 9.0f },
+                { ampAttack, 0.4f }, { ampDecay, 0.6f }, { ampSustain, 0.85f }, { ampRelease, 1.5f },
+                { filterCutoff, 900.0f }, { filterResonance, 2.2f }, { filterEnvAmount, 10.0f },
+                { lfoShape, 0 }, { lfoTarget, 0 }, { lfoRate, 0.35f }, { lfoDepth, 0.45f },
+                { masterGainDb, -3.0f },
+                { wetMode, 0 }, { wetMix, 0.35f }, { wetTime, 0.7f }, { wetModify, 0.5f },
             }
         },
     };
