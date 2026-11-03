@@ -1,49 +1,62 @@
-# Salir de Casa
+# Salir de Casa — sintetizador VST3
 
-A VST3 synthesizer plugin for FL Studio (and any VST3 host), built with [JUCE](https://juce.com/).
+Plugin de síntesis y efectos glitch para FL Studio (y cualquier host VST3), escrito en **C++17 con JUCE**.
+Es el instrumento con el que se está grabando el primer disco de mi banda, *salir de casa*
+([página de la banda](https://pedrofelipe14.github.io/salir-de-casa/)).
 
-## What it is
+![Interfaz del plugin](docs/screenshot.png)
 
-Salir de Casa is a two-oscillator subtractive synth (preset shapes or a custom point-shaped wave, ADSR, resonant filter with envelope
-modulation) paired with a Chase Bliss "Mood"/"Blooper"-style granular degrader that can
-run on an audio sidechain input, the synth's own output, or both. It continuously
-records live audio, freezes grains and loops them, pitch-shifts the loop, and
-progressively degrades it (bit/rate crush + grit) the longer a grain repeats. A single
-"Chaos" knob drives generative randomness on top: tape-style wow/flutter, random reverse
-flips, and random decisions to grab fresh material vs. keep looping what it already has
-— aimed at glitchcore/indietronica textures (think Eartheater, THE HELLP).
+## Qué hace
 
-Glitch params: Grain Size, Pitch, Hold (freeze-loop tendency), Degrade, Chaos, Reverse
-Amount, and Tone Tilt (dark/lowpassed to bright/highpass-emphasised).
+- **Dos osciladores** por voz: seno, sierra, cuadrada, triangular o una **onda propia que se dibuja arrastrando puntos** sobre el gráfico. Cada uno con nivel, octava, semitonos y afinación fina.
+- **Filtro pasa-bajos resonante** con envolvente y **ADSR** de amplitud.
+- **LFO por voz** hacia filtro, tono o volumen (seno, triangular, sierra, cuadrada o aleatorio).
+- **Pitch bend con glide**: las *slide notes* de FL Studio funcionan de fábrica.
+- **Micro-loop glitch**: graba audio en vivo, congela fragmentos, los repite transpuestos, los da vuelta y los degrada de a poco (bit/rate crush). Funciona sobre el propio sinte o sobre **audio externo por sidechain**.
+- **Efectos wet**: reverb, delay y slip, con orden de ruteo configurable.
+- **Presets** de fábrica y **presets de usuario** (archivos `.sdcpreset`); el estado completo se guarda en la sesión del DAW.
+- **Interfaz propia** escalable, con teclado en pantalla y tocable desde el teclado de la computadora.
 
-In FL Studio: drop it in the Channel Rack as an instrument (slide notes work via pitch
-bend; keep the wrapper's pitch bend range equal to the "Rango Bend" knob, 12 by default),
-then right-click a mixer
-track and "Sidechain to this track" into the plugin's input to feed it audio to glitch.
+## Detalles técnicos
 
-## Building
+- Osciladores con **anti-aliasing PolyBLEP**. La onda propia es una curva **Catmull-Rom periódica** que se renderiza a una tabla de 256 muestras.
+- La interfaz y el audio comparten datos mediante `std::atomic`, sin locks en el hilo de audio.
+- Filtro *state-variable* TPT (`juce::dsp`), bloqueo de DC, *de-click* al robar voces y limitador suave de salida.
+- Parámetros con `AudioProcessorValueTreeState`: automatizables desde el host y con unidades legibles (Hz, ms, st, dB).
+- `LookAndFeel` propio: perillas, switches y menús dibujados a mano; la UI se escala sin deformarse.
+- Build con **CMake**; genera VST3 y una versión Standalone para probar sin DAW.
 
-Requirements: CMake 3.22+, a C++17 compiler (MSVC on Windows), and the JUCE submodule.
+## Compilar
+
+Requisitos: CMake 3.22+, un compilador C++17 (MSVC en Windows) y el submódulo de JUCE.
 
 ```sh
 git submodule update --init --recursive
 cmake -B build -G "Visual Studio 17 2022"
-cmake --build build --config Release
+cmake --build build --config Release --target SalirDeCasa_All
 ```
 
-The built VST3 is copied automatically to your system's VST3 folder
-(`COPY_PLUGIN_AFTER_BUILD TRUE` in CMakeLists.txt). A Standalone build is also produced
-for quick testing without a DAW.
+El VST3 se copia a la carpeta definida en `VST3_COPY_DIR` dentro de `CMakeLists.txt` (cambiala por tu carpeta de plugins).
 
-## Project layout
+## Uso en FL Studio
 
-- `Source/PluginProcessor.*` — parameter layout, audio bus setup, processBlock.
-- `Source/PluginEditor.*` — UI layout; `Source/SalirLookAndFeel.*` draws knobs, switches, menus.
-- `Source/DSP/SynthVoice.*` — two-oscillator voice + ADSR + filter.
-- `Source/DSP/CustomWave.h` — point-shaped single-cycle waveform (one per oscillator).
-- `Source/WaveEditor.*` — waveform display with draggable shaping points.
-- `Source/DSP/GlitchEngine.*` — bitcrush / stutter-repeat / reverse processor.
+1. Cargarlo en el Channel Rack como instrumento.
+2. Para las *slide notes*, el rango de pitch bend del wrapper tiene que coincidir con la perilla **Rango Bend** (12 por defecto).
+3. Para glitchear otro audio: en el mixer, *Sidechain to this track* hacia la entrada del plugin.
 
-## Status
+## Estructura
 
-v0.2 — two oscillators, wet engine, micro-loop, custom chalkboard UI with banner.
+| Archivo | Qué hace |
+|---|---|
+| `Source/PluginProcessor.*` | Parámetros, buses de audio, `processBlock`, presets y estado |
+| `Source/PluginEditor.*` | Layout de la interfaz y teclado de la computadora |
+| `Source/SalirLookAndFeel.*` | Dibujo de perillas, switches y menús |
+| `Source/WaveEditor.*` | Gráfico de la onda con puntos arrastrables |
+| `Source/DSP/SynthVoice.*` | Voz: osciladores, ADSR, filtro, LFO, pitch bend |
+| `Source/DSP/CustomWave.h` | Onda propia (curva por puntos → tabla) |
+| `Source/DSP/GlitchEngine.*` | Micro-loop: grabación, repetición, reversa, degradación |
+| `Source/DSP/WetEngine.*` | Reverb, delay y slip |
+
+## Estado
+
+En desarrollo (v0.3). Se va a publicar junto con el disco.
