@@ -8,9 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/JUCE JUCE)
 
 juce_add_plugin(SalirDeCasa
-    COMPANY_NAME "YourStudio"
-    PLUGIN_MANUFACTURER_CODE Yrst
-    PLUGIN_CODE Ant1
+    COMPANY_NAME "Salir de Casa"
+    PLUGIN_MANUFACTURER_CODE Sdcs
+    PLUGIN_CODE Sdc1
     FORMATS VST3 Standalone
     PRODUCT_NAME "Salir de Casa"
     IS_SYNTH TRUE

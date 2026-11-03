@@ -1,10 +1,10 @@
-# GlitchSynth
+# Salir de Casa
 
 A VST3 synthesizer plugin for FL Studio (and any VST3 host), built with [JUCE](https://juce.com/).
 
 ## What it is
 
-GlitchSynth is a subtractive synth (4 waveforms, ADSR, resonant filter with envelope
+Salir de Casa is a two-oscillator subtractive synth (preset shapes or a custom point-shaped wave, ADSR, resonant filter with envelope
 modulation) paired with a Chase Bliss "Mood"/"Blooper"-style granular degrader that can
 run on an audio sidechain input, the synth's own output, or both. It continuously
 records live audio, freezes grains and loops them, pitch-shifts the loop, and
@@ -16,8 +16,10 @@ flips, and random decisions to grab fresh material vs. keep looping what it alre
 Glitch params: Grain Size, Pitch, Hold (freeze-loop tendency), Degrade, Chaos, Reverse
 Amount, and Tone Tilt (dark/lowpassed to bright/highpass-emphasised).
 
-In FL Studio: drop it in the Channel Rack as an instrument, then right-click a mixer
-track and "Sidechain to this track" into GlitchSynth's input to feed it audio to glitch.
+In FL Studio: drop it in the Channel Rack as an instrument (slide notes work via pitch
+bend; keep the wrapper's pitch bend range equal to the "Rango Bend" knob, 12 by default),
+then right-click a mixer
+track and "Sidechain to this track" into the plugin's input to feed it audio to glitch.
 
 ## Building
 
@@ -36,7 +38,7 @@ for quick testing without a DAW.
 ## Project layout
 
 - `Source/PluginProcessor.*` — parameter layout, audio bus setup, processBlock.
-- `Source/PluginEditor.*` — UI (currently the generic auto-built parameter editor).
+- `Source/PluginEditor.*` — UI layout; `Source/SalirLookAndFeel.*` draws knobs, switches, menus.
 - `Source/DSP/SynthVoice.*` — two-oscillator voice + ADSR + filter.
 - `Source/DSP/CustomWave.h` — point-shaped single-cycle waveform (one per oscillator).
 - `Source/WaveEditor.*` — waveform display with draggable shaping points.
@@ -44,4 +46,4 @@ for quick testing without a DAW.
 
 ## Status
 
-v0.1 — functional synth + glitch engine, generic UI. Custom UI is a planned next step.
+v0.2 — two oscillators, wet engine, micro-loop, custom chalkboard UI with banner.
